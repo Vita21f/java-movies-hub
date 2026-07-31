@@ -1,10 +1,7 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.Gson;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
@@ -53,6 +50,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies без фильмов -> 200 и пустой массив")
     void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -75,6 +73,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies с одним фильмом -> 200 и этот фильм в массиве")
     void getMovie_whenMovieExist_returnsArray() throws Exception {
 
         store.add(new Movie("Белоснежка", 1970));
@@ -98,6 +97,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("Двум фильмам присваиваются последовательные id (1, 2)")
     void getTwoMovies_assignsSequentialIds() throws Exception {
         Movie movie1 = store.add(new Movie("Белоснежка", 1970));
         Movie movie2 = store.add(new Movie("Золушка", 1950));
@@ -123,6 +123,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST валидного фильма -> 201 и фильм с присвоенным id")
     void postValidMovie_returns201AndMovieWithId() throws IOException, InterruptedException {
         String json = GSON.toJson(new Movie("Белоснежка", 1970));
         HttpRequest req = HttpRequest.newBuilder()
@@ -143,6 +144,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с пустым title -> 422 с причиной про название")
     void postMovieWithEmptyTitle_returns422AndErrorDetails() throws Exception {
         String json = "{\"title\": \"\", \"year\": 2000}";
 
@@ -163,6 +165,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с title из одних пробелов -> 422 с причиной про название")
     void postMovieWithTitleWithOnlySpaces_returns422AndErrorDetails() throws Exception {
         String json = "{\"title\": \"   \", \"year\": 2000}";
 
@@ -183,6 +186,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с отсутствующим полем title -> 422 с причиной про название")
     void postMovieWithoutTitle_returns422AndErrorDetails() throws Exception {
         String json = "{\"year\": 2000}";
 
@@ -203,6 +207,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с year 1887 (за нижней границей) -> 422 с причиной про год")
     void postMovieWithYearBelowLowerBound_returns422AndErrorDetails() throws Exception {
         String json = "{\"title\": \"Белоснежка\", \"year\": 1887}";
 
@@ -223,6 +228,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с year 1888 (нижняя граница) принимается -> 201")
     void postMovieWithYearAtLowerBound_returns201AndMovieWithId() throws Exception {
         String json = "{\"title\": \"Белоснежка\", \"year\": 1888}";
 
@@ -244,6 +250,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с year «текущий + 1» (верхняя граница) принимается -> 201")
     void postMovieWithYearAtUpperBound_returns201AndMovieWithId() throws Exception {
         String json = "{\"title\": \"Белоснежка\", \"year\": " + (CURRENT_YEAR + 1) + "}";
 
@@ -265,6 +272,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с year «текущий + 2» (за верхней границей) -> 422 с причиной про год")
     void postMovieWithYearAboveUpperBound_returns422AndErrorDetails() throws Exception {
         String json = "{\"title\": \"Белоснежка\", \"year\": " + (CURRENT_YEAR + 2) + "}";
 
@@ -285,6 +293,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с пустым title и недопустимым year -> 422 с двумя причинами")
     void postMovieWithEmptyTitleAndInvalidYear_returns422AndTwoDetails() throws Exception {
         String json = "{\"title\": \"\", \"year\": " + (CURRENT_YEAR + 2) + "}";
 
@@ -306,6 +315,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с title из 101 символа -> 422 с причиной про длину")
     void postMovieWithTitleOf101Chars_returns422AndErrorDetails() throws Exception {
         String json = GSON.toJson(new Movie("a".repeat(101), 2000));
 
@@ -327,6 +337,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST фильма с title из 100 символов (граница длины) принимается -> 201")
     void postMovieWithTitleOf100Chars_returns201AndMovieWithId() throws Exception {
         String title = "a".repeat(100);
         String json = GSON.toJson(new Movie(title, 2000));
@@ -349,6 +360,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST с Content-Type text/plain -> 415")
     void postMovieWithWrongContentType_returns415() throws Exception {
         String json = GSON.toJson(new Movie("Белоснежка", 1970));
         HttpRequest req = HttpRequest.newBuilder()
@@ -364,6 +376,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST без заголовка Content-Type -> 415")
     void postMovieWithoutContentType_returns415() throws Exception {
         String json = GSON.toJson(new Movie("Белоснежка", 1970));
         HttpRequest req = HttpRequest.newBuilder()
@@ -378,6 +391,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST с синтаксически неправильным JSON -> 400")
     void postMovieWithMalformedJson_returns400AndErrorResponse() throws Exception {
         String json = "{ \"title\": ";
         HttpRequest req = HttpRequest.newBuilder()
@@ -396,6 +410,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST с пустым телом -> 400")
     void postMovieWithEmptyBody_returns400AndErrorResponse() throws Exception {
         String json = "";
         HttpRequest req = HttpRequest.newBuilder()
@@ -414,6 +429,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("POST с телом-литералом null -> 400")
     void postMovieWithNullLiteralBody_returns400AndErrorResponse() throws Exception {
         String json = "null";
         HttpRequest req = HttpRequest.newBuilder()
@@ -432,6 +448,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies/{id} существующего фильма -> 200 и фильм")
     void getMovieById_WhenIdExists_returns200AndMovie() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -453,6 +470,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies/{id} несуществующего фильма -> 404")
     void getMovieById_WhenIdNotFound_returns404AndErrorResponse() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -471,6 +489,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies/{id} с нечисловым id -> 400")
     void getMovieById_WhenIdIsNotNumber_returns400AndErrorResponse() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -489,6 +508,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies/ с хвостовым слэшем -> 400")
     void getMovieById_WhenPathHasTrailingSlash_returns400AndErrorResponse() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies/"))
@@ -505,6 +525,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies/{id}/extra с лишним сегментом -> 404")
     void getMovieById_WhenPathHasExtraSegment_returns404AndErrorResponse() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -523,6 +544,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("DELETE /movies/{id} существующего фильма -> 204 и удаление из хранилища")
     void deleteMovieById_WhenIdExists_returns200() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -539,6 +561,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("DELETE /movies/{id} несуществующего фильма -> 404, хранилище не изменилось")
     void deleteMovieById_WhenIdNotFound_returns404AndErrorResponse() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -558,6 +581,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("DELETE /movies/{id} с нечисловым id -> 400, хранилище не изменилось")
     void deleteMovieById_WhenIdIsNotNumber_returns400AndErrorResponse() throws Exception {
         store.add(new Movie("Белоснежка", 1970));
 
@@ -577,6 +601,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies?year=YYYY -> 200 и только фильмы этого года")
     void getMoviesByYear_WhenMoviesExist_returns200() throws Exception {
         Movie movie1 = new Movie("Белоснежка", 1970);
         Movie movie2 = new Movie("Золушка", 1970);
@@ -606,6 +631,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies?year=YYYY без совпадений -> 200 и пустой JSON-массив")
     void getMoviesByYear_WhenMoviesNotExist_returns200AndEmptyList() throws Exception {
         Movie movie1 = new Movie("Белоснежка", 1970);
         Movie movie2 = new Movie("Золушка", 1970);
@@ -631,6 +657,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies?year со значением-нечислом -> 400")
     void getMoviesByYear_WhenYearNotNumber_returns400AndErrorResponse() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies?year=abc"))
@@ -647,6 +674,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies?year= с пустым значением -> 400")
     void getMoviesByYear_WhenYearWithEmptyValue_returns400AndErrorResponse() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies?year="))
@@ -663,6 +691,7 @@ public class MoviesApiTest {
     }
 
     @Test
+    @DisplayName("GET /movies?title=… с чужим параметром -> 400")
     void getMoviesByYear_WhenParamIsNotYear_returns400AndErrorResponse() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies?title=1980"))

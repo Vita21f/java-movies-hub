@@ -25,82 +25,93 @@ public class MoviesHandler extends BaseHttpHandler {
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
-        String method = ex.getRequestMethod();
+        String method = ex.getRequestMethod().toUpperCase();
         switch (method) {
             case "GET":
-                String path = ex.getRequestURI().getPath();
-
-                if (path.equals("/movies")) {
-                    String query = ex.getRequestURI().getQuery();
-
-                    if (query == null) {
-                        sendJson(ex, 200, GSON.toJson(store.getAll()));
-                        break;
-                    }
-
-                    Optional<List<Movie>> filteredOpt = findMoviesByQuery(ex, query);
-                    if (filteredOpt.isEmpty()) {
-                        break;
-                    }
-                    sendJson(ex, 200, GSON.toJson(filteredOpt.get()));
-                    break;
-                }
-
-                Optional<Movie> movieOpt = findMovieByPath(ex);
-                if (movieOpt.isEmpty()) {
-                    break;
-                }
-                sendJson(ex, 200, GSON.toJson(movieOpt.get()));
+                processGet(ex);
                 break;
 
-
             case "POST":
-                String contentType = ex.getRequestHeaders().getFirst("Content-Type");
-                if (contentType == null || !contentType.startsWith("application/json")) {
-                    sendUnsupportedMediaType(ex);
-                    break;
-                }
-
-                InputStream is = ex.getRequestBody();
-                String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-
-                Movie movie;
-                try {
-                    movie = GSON.fromJson(body, Movie.class);
-                } catch (JsonSyntaxException e) {
-                    sendError(ex, 400, "Неправильный формат запроса");
-                    break;
-                }
-
-                if (movie == null) {
-                    sendError(ex, 400, "Неправильный формат запроса");
-                    break;
-                }
-
-                List<String> details = validate(movie);
-
-                if (details.isEmpty()) {
-                    store.add(movie);
-                    sendJson(ex, 201, GSON.toJson(movie));
-                } else {
-                    ErrorResponse error = new ErrorResponse("Ошибка валидации", details);
-                    sendJson(ex, 422, GSON.toJson(error));
-                }
+                processPost(ex);
                 break;
 
             case "DELETE":
-                Optional<Movie> movieOptional = findMovieByPath(ex);
-                if (movieOptional.isEmpty()) {
-                    break;
-                }
-                store.removeMovie(movieOptional.get());
-                sendNoContent(ex);
+                processDelete(ex);
                 break;
 
             default:
                 sendMethodNotAllowed(ex);
                 break;
         }
+    }
+
+    private void processGet(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
+
+        if (path.equalsIgnoreCase("/movies")) {
+            String query = ex.getRequestURI().getQuery();
+
+            if (query == null) {
+                sendJson(ex, 200, GSON.toJson(store.getAll()));
+                return;
+            }
+
+            Optional<List<Movie>> filteredOpt = findMoviesByQuery(ex, query);
+            if (filteredOpt.isEmpty()) {
+                return;
+            }
+            sendJson(ex, 200, GSON.toJson(filteredOpt.get()));
+            return;
+        }
+
+        Optional<Movie> movieOpt = findMovieByPath(ex);
+        if (movieOpt.isEmpty()) {
+            return;
+        }
+        sendJson(ex, 200, GSON.toJson(movieOpt.get()));
+    }
+
+    private void processPost(HttpExchange ex) throws IOException {
+        String contentType = ex.getRequestHeaders().getFirst("Content-Type");
+        if (contentType == null || !contentType.startsWith("application/json")) {
+            sendUnsupportedMediaType(ex);
+            return;
+        }
+
+        InputStream is = ex.getRequestBody();
+        String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+
+        Movie movie;
+        try {
+            movie = GSON.fromJson(body, Movie.class);
+        } catch (JsonSyntaxException e) {
+            sendError(ex, 400, "Неправильный формат запроса");
+            return;
+        }
+
+        if (movie == null) {
+            sendError(ex, 400, "Неправильный формат запроса");
+            return;
+        }
+
+        List<String> details = validate(movie);
+
+        if (details.isEmpty()) {
+            store.add(movie);
+            sendJson(ex, 201, GSON.toJson(movie));
+        } else {
+            ErrorResponse error = new ErrorResponse("Ошибка валидации", details);
+            sendJson(ex, 422, GSON.toJson(error));
+        }
+    }
+
+    private void processDelete(HttpExchange ex) throws IOException {
+        Optional<Movie> movieOptional = findMovieByPath(ex);
+        if (movieOptional.isEmpty()) {
+            return;
+        }
+        store.removeMovie(movieOptional.get());
+        sendNoContent(ex);
     }
 
     private List<String> validate(Movie movie) {
